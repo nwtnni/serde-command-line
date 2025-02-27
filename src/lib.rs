@@ -136,13 +136,14 @@ impl ser::Serializer for &'_ mut Serializer {
         self,
         _name: &'static str,
         _variant_index: u32,
-        _variant: &'static str,
-        _value: &T,
+        variant: &'static str,
+        value: &T,
     ) -> std::result::Result<Self::Ok, Self::Error>
     where
         T: ?Sized + Serialize,
     {
-        Err(Error::Unsupported("newtype variant"))
+        self.args.push(variant.to_string());
+        value.serialize(self)
     }
 
     fn serialize_seq(

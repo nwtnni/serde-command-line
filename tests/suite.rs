@@ -1,5 +1,7 @@
 #![allow(clippy::disallowed_names)]
 
+use std::path::PathBuf;
+
 use serde::Serialize;
 
 macro_rules! expect {
@@ -114,6 +116,12 @@ struct Command {
 enum Subcommand {
     Load {},
     Run { time: i64 },
+    Go(Go),
+}
+
+#[derive(Serialize)]
+struct Go {
+    to: PathBuf,
 }
 
 #[test]
@@ -135,5 +143,18 @@ fn subcommand_field() {
             subcommand: Subcommand::Run { time: 2 }
         },
         ["--path=a/b", "Run", "--time=2"]
+    );
+}
+
+#[test]
+fn subcommand_newtype() {
+    compare!(
+        Command {
+            path: String::from("a/b"),
+            subcommand: Subcommand::Go(Go {
+                to: PathBuf::from("c/d"),
+            })
+        },
+        ["--path=a/b", "Go", "--to=c/d"]
     );
 }
