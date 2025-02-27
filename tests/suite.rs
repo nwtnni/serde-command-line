@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_names)]
+
 use serde::Serialize;
 
 macro_rules! expect {
@@ -14,7 +16,7 @@ macro_rules! expect {
 }
 
 macro_rules! compare {
-    ($deserialized:expr, [ $($serialized:expr),* $(,)? ]) => {
+    ($deserialized:expr, [ $($serialized:expr),* $(,)? ] $(,)?) => {
         assert_eq!(serialize($deserialized), expect!($($serialized),*))
     }
 }
@@ -83,4 +85,55 @@ fn multiple() {
         },
         ["--a=42", "--b=test"]
     )
+}
+
+#[derive(Serialize)]
+struct UnitEnumOuter {
+    b: UnitEnum,
+}
+
+#[derive(Serialize)]
+enum UnitEnum {
+    A,
+    B,
+}
+
+#[test]
+fn enum_unit() {
+    compare!(UnitEnumOuter { b: UnitEnum::A }, ["--b=A"]);
+    compare!(UnitEnumOuter { b: UnitEnum::B }, ["--b=B"]);
+}
+
+#[derive(Serialize)]
+struct Command {
+    path: String,
+    subcommand: Subcommand,
+}
+
+#[derive(Serialize)]
+enum Subcommand {
+    Load {},
+    Run { time: i64 },
+}
+
+#[test]
+fn subcommand_empty() {
+    compare!(
+        Command {
+            path: String::from("a/b"),
+            subcommand: Subcommand::Load {}
+        },
+        ["--path=a/b", "Load"]
+    );
+}
+
+#[test]
+fn subcommand_field() {
+    compare!(
+        Command {
+            path: String::from("a/b"),
+            subcommand: Subcommand::Run { time: 2 }
+        },
+        ["--path=a/b", "Run", "--time=2"]
+    );
 }
